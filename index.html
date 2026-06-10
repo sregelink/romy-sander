@@ -9,8 +9,6 @@
 :root{
     --bg:#000;
     --text:#fff;
-    --button:#fff;
-    --buttonText:#000;
 }
 
 *{
@@ -63,9 +61,12 @@ body{
 
 .button-container{
     margin-top:50px;
+    width:100%;
+    max-width:320px;
 }
 
-button{
+#continueBtn{
+    width:100%;
     border:none;
     border-radius:999px;
     padding:16px 32px;
@@ -74,18 +75,50 @@ button{
     cursor:not-allowed;
     opacity:.4;
     transition:.3s;
+    background:#555;
+    color:#aaa;
 }
 
-button.enabled{
-    background:var(--button);
-    color:var(--buttonText);
+#continueBtn.enabled{
+    background:#fff;
+    color:#000;
     opacity:1;
     cursor:pointer;
 }
 
-button:disabled{
-    background:#555;
-    color:#aaa;
+.password-section{
+    margin-top:20px;
+    width:100%;
+    max-width:320px;
+}
+
+.password-section input{
+    width:100%;
+    padding:14px 16px;
+    border:none;
+    border-radius:12px;
+    font-size:16px;
+    outline:none;
+}
+
+.password-btn{
+    width:100%;
+    margin-top:12px;
+    padding:14px;
+    border:none;
+    border-radius:12px;
+    background:#fff;
+    color:#000;
+    font-weight:600;
+    cursor:pointer;
+}
+
+#message{
+    margin-top:12px;
+    text-align:center;
+    font-size:14px;
+    opacity:.8;
+    min-height:20px;
 }
 </style>
 </head>
@@ -96,22 +129,22 @@ button:disabled{
     <div class="countdown">
         <div class="unit">
             <div class="number" id="days">0</div>
-            <div class="label">Dagen</div>
+            <div class="label">DAGEN</div>
         </div>
 
         <div class="unit">
             <div class="number" id="hours">00</div>
-            <div class="label">Uur</div>
+            <div class="label">UUR</div>
         </div>
 
         <div class="unit">
             <div class="number" id="minutes">00</div>
-            <div class="label">Min</div>
+            <div class="label">MIN</div>
         </div>
 
         <div class="unit">
             <div class="number" id="seconds">00</div>
-            <div class="label">Sec</div>
+            <div class="label">SEC</div>
         </div>
     </div>
 
@@ -121,50 +154,224 @@ button:disabled{
         </button>
     </div>
 
+    <div class="password-section">
+
+        <input
+            type="password"
+            id="passwordInput"
+            placeholder="Wachtwoord">
+
+        <button
+            id="passwordBtn"
+            class="password-btn">
+            Ontgrendel
+        </button>
+
+        <div id="message"></div>
+
+    </div>
+
 </div>
 
 <script>
-const deadline = new Date("2026-06-14T23:59:59").getTime();
+/*
+|--------------------------------------------------------------------------
+| INSTELLINGEN
+|--------------------------------------------------------------------------
+*/
+
+const DEADLINE = new Date("2026-06-14T23:59:59").getTime();
+
+// VERVANG DIT WACHTWOORD
+const PASSWORD = "mijngeheimwachtwoord";
+
+// PAGINA WAARNAAR WORDT DOORGESTUURD
+const NEXT_PAGE = "pagina2.html";
+
+const MAX_ATTEMPTS = 3;
+const LOCK_HOURS = 12;
+
+/*
+|--------------------------------------------------------------------------
+| ELEMENTEN
+|--------------------------------------------------------------------------
+*/
+
 const btn = document.getElementById("continueBtn");
 
-function unlockButton() {
+const passwordInput =
+    document.getElementById("passwordInput");
+
+const passwordBtn =
+    document.getElementById("passwordBtn");
+
+const message =
+    document.getElementById("message");
+
+/*
+|--------------------------------------------------------------------------
+| COUNTDOWN
+|--------------------------------------------------------------------------
+*/
+
+function unlockContinueButton() {
+
     btn.disabled = false;
     btn.classList.add("enabled");
 
-    btn.addEventListener("click", () => {
-        // Hier later jouw volgende pagina
-        window.location.href = "pagina2.html";
-    });
+    btn.onclick = () => {
+        window.location.href = NEXT_PAGE;
+    };
 }
 
 function updateCountdown() {
+
     const now = Date.now();
-    const distance = deadline - now;
+    const distance = DEADLINE - now;
 
     if (distance <= 0) {
+
         document.getElementById("days").textContent = "0";
         document.getElementById("hours").textContent = "00";
         document.getElementById("minutes").textContent = "00";
         document.getElementById("seconds").textContent = "00";
 
         clearInterval(timer);
-        unlockButton();
+        unlockContinueButton();
+
         return;
     }
 
-    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((distance / (1000 * 60 * 60)) % 24);
-    const minutes = Math.floor((distance / (1000 * 60)) % 60);
-    const seconds = Math.floor((distance / 1000) % 60);
+    const days =
+        Math.floor(distance / (1000 * 60 * 60 * 24));
 
-    document.getElementById("days").textContent = days;
-    document.getElementById("hours").textContent = String(hours).padStart(2, "0");
-    document.getElementById("minutes").textContent = String(minutes).padStart(2, "0");
-    document.getElementById("seconds").textContent = String(seconds).padStart(2, "0");
+    const hours =
+        Math.floor((distance / (1000 * 60 * 60)) % 24);
+
+    const minutes =
+        Math.floor((distance / (1000 * 60)) % 60);
+
+    const seconds =
+        Math.floor((distance / 1000) % 60);
+
+    document.getElementById("days").textContent =
+        days;
+
+    document.getElementById("hours").textContent =
+        String(hours).padStart(2, "0");
+
+    document.getElementById("minutes").textContent =
+        String(minutes).padStart(2, "0");
+
+    document.getElementById("seconds").textContent =
+        String(seconds).padStart(2, "0");
 }
 
 updateCountdown();
 const timer = setInterval(updateCountdown, 1000);
+
+/*
+|--------------------------------------------------------------------------
+| WACHTWOORDBEVEILIGING
+|--------------------------------------------------------------------------
+*/
+
+function getAttempts() {
+    return parseInt(
+        localStorage.getItem("attempts") || "0"
+    );
+}
+
+function setAttempts(value) {
+    localStorage.setItem("attempts", value);
+}
+
+function getLockUntil() {
+    return parseInt(
+        localStorage.getItem("lockUntil") || "0"
+    );
+}
+
+function isLocked() {
+    return Date.now() < getLockUntil();
+}
+
+function updateLockStatus() {
+
+    if (!isLocked()) {
+        passwordInput.disabled = false;
+        passwordBtn.disabled = false;
+        return;
+    }
+
+    const minutesLeft = Math.ceil(
+        (getLockUntil() - Date.now()) / 1000 / 60
+    );
+
+    passwordInput.disabled = true;
+    passwordBtn.disabled = true;
+
+    message.textContent =
+        "Geblokkeerd. Opnieuw proberen over " +
+        minutesLeft +
+        " minuten.";
+}
+
+passwordBtn.addEventListener("click", () => {
+
+    if (isLocked()) {
+        updateLockStatus();
+        return;
+    }
+
+    const enteredPassword =
+        passwordInput.value.trim();
+
+    if (enteredPassword === PASSWORD) {
+
+        localStorage.removeItem("attempts");
+        localStorage.removeItem("lockUntil");
+
+        window.location.href = NEXT_PAGE;
+        return;
+    }
+
+    let attempts = getAttempts() + 1;
+
+    setAttempts(attempts);
+
+    if (attempts >= MAX_ATTEMPTS) {
+
+        const lockUntil =
+            Date.now() +
+            (LOCK_HOURS * 60 * 60 * 1000);
+
+        localStorage.setItem(
+            "lockUntil",
+            lockUntil
+        );
+
+        message.textContent =
+            "Te veel foutieve pogingen. 12 uur geblokkeerd.";
+
+        updateLockStatus();
+
+    } else {
+
+        const remaining =
+            MAX_ATTEMPTS - attempts;
+
+        message.textContent =
+            "Onjuist wachtwoord. Nog " +
+            remaining +
+            " poging(en) over.";
+    }
+
+    passwordInput.value = "";
+});
+
+updateLockStatus();
+setInterval(updateLockStatus, 60000);
 </script>
 
 </body>
