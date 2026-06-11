@@ -1,162 +1,28 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!DOCTYPE html>
-<html lang="nl">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Countdown</title>
-
-<style>
-body{
-    background:#000;
-    color:#fff;
-    font-family:Arial,sans-serif;
-    min-height:100dvh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    margin:0;
-}
-
-.wrapper{
-    text-align:center;
-    width:100%;
-    max-width:500px;
-    padding:20px;
-}
-
-.countdown{
-    display:flex;
-    justify-content:center;
-    gap:15px;
-}
-
-.unit{
-    flex:1;
-}
-
-.number{
-    font-size:clamp(2rem,10vw,5rem);
-    font-weight:bold;
-}
-
-.label{
-    opacity:.7;
-    font-size:.8rem;
-}
-
-#continueBtn{
-    margin-top:40px;
-    width:100%;
-    padding:15px;
-    border:none;
-    border-radius:999px;
-    font-size:16px;
-    font-weight:bold;
-    cursor:not-allowed;
-    opacity:.4;
-}
-
-.enabled{
-    opacity:1 !important;
-    cursor:pointer !important;
-}
-
-.password-section{
-    margin-top:20px;
-}
-
-input{
-    width:100%;
-    padding:15px;
-    border-radius:12px;
-    border:none;
-}
-
-.password-btn{
-    margin-top:10px;
-    width:100%;
-    padding:15px;
-    border:none;
-    border-radius:12px;
-    font-weight:bold;
-    cursor:pointer;
-}
-
-#message{
-    margin-top:10px;
-}
-</style>
-</head>
-<body>
-
-<div class="wrapper">
-
-<div class="countdown">
-    <div class="unit">
-        <div class="number" id="days">0</div>
-        <div class="label">DAGEN</div>
-    </div>
-
-    <div class="unit">
-        <div class="number" id="hours">00</div>
-        <div class="label">UUR</div>
-    </div>
-
-    <div class="unit">
-        <div class="number" id="minutes">00</div>
-        <div class="label">MIN</div>
-    </div>
-
-    <div class="unit">
-        <div class="number" id="seconds">00</div>
-        <div class="label">SEC</div>
-    </div>
-</div>
-
-<button id="continueBtn" disabled>
-    Verder
-</button>
-
-<div class="password-section">
-
-<input
-    type="password"
-    id="passwordInput"
-    placeholder="Wachtwoord">
-
-<button
-    class="password-btn"
-    id="passwordBtn">
-    Ontgrendel
-</button>
-
-<div id="message"></div>
-
-</div>
-
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
-const PASSWORD = "jouw_wachtwoord";
-const NEXT_PAGE = "pagina2.html";
+const SUPABASE_URL =
+"https://lyunugxabsahoyywfqhc.supabase.co";
 
-const SUPABASE_URL = "https://lyunugxabsahoyywfqhc.supabase.co/rest/v1/";
-const SUPABASE_KEY = "sb_publishable_BSDh9x32ocZYz8tfD87Jfg_-OJnL0X2";
+const SUPABASE_KEY =
+"sb_publishable_BSDh9x32ocZYz8tfD87Jfg_-OJnL0X2";
+
+const PASSWORD =
+"mijngeheimecode";
+
+const NEXT_PAGE =
+"pagina2.html";
 
 const supabaseClient =
-    supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_KEY
-    );
+supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
 
 let visitorId =
-    localStorage.getItem("visitorId");
+localStorage.getItem("visitorId");
 
-if(!visitorId){
+if (!visitorId) {
     visitorId = crypto.randomUUID();
     localStorage.setItem(
         "visitorId",
@@ -164,152 +30,133 @@ if(!visitorId){
     );
 }
 
-const DEADLINE =
-    new Date("2026-06-14T23:59:59").getTime();
+async function logAttempt(password, success){
 
-const btn =
-    document.getElementById("continueBtn");
-
-function unlockButton(){
-
-    btn.disabled = false;
-    btn.classList.add("enabled");
-
-    btn.onclick = () => {
-        location.href = NEXT_PAGE;
-    };
+    await supabaseClient
+    .from("password_logs")
+    .insert({
+        visitor_id: visitorId,
+        password_entered: password,
+        success: success
+    });
 }
 
-function updateCountdown(){
+async function getLockData(){
 
-    const now = Date.now();
-    const distance = DEADLINE - now;
+    const { data } =
+    await supabaseClient
+    .from("password_locks")
+    .select("*")
+    .eq("visitor_id", visitorId)
+    .maybeSingle();
 
-    if(distance <= 0){
+    return data;
+}
 
-        unlockButton();
+async function handlePassword(){
 
-        document.getElementById("days").textContent = "0";
-        document.getElementById("hours").textContent = "00";
-        document.getElementById("minutes").textContent = "00";
-        document.getElementById("seconds").textContent = "00";
+    const message =
+    document.getElementById("message");
+
+    const entered =
+    document
+    .getElementById("passwordInput")
+    .value
+    .trim();
+
+    const lockData =
+    await getLockData();
+
+    if(
+        lockData &&
+        lockData.locked_until &&
+        new Date(lockData.locked_until) > new Date()
+    ){
+
+        const mins =
+        Math.ceil(
+            (
+                new Date(lockData.locked_until)
+                - new Date()
+            ) / 60000
+        );
+
+        message.textContent =
+        "Geblokkeerd. Nog " +
+        mins +
+        " minuten.";
 
         return;
     }
 
-    const days =
-        Math.floor(distance/(1000*60*60*24));
+    if(entered === PASSWORD){
 
-    const hours =
-        Math.floor((distance/(1000*60*60))%24);
+        await logAttempt(
+            entered,
+            true
+        );
 
-    const minutes =
-        Math.floor((distance/(1000*60))%60);
+        window.location.href =
+        NEXT_PAGE;
 
-    const seconds =
-        Math.floor((distance/1000)%60);
+        return;
+    }
 
-    daysEl.textContent = days;
-    hoursEl.textContent =
-        String(hours).padStart(2,"0");
+    await logAttempt(
+        entered,
+        false
+    );
 
-    minutesEl.textContent =
-        String(minutes).padStart(2,"0");
+    let attempts = 1;
 
-    secondsEl.textContent =
-        String(seconds).padStart(2,"0");
+    if(lockData){
+        attempts =
+        lockData.attempts + 1;
+    }
+
+    if(attempts >= 3){
+
+        const lockUntil =
+        new Date(
+            Date.now() +
+            12 * 60 * 60 * 1000
+        ).toISOString();
+
+        await supabaseClient
+        .from("password_locks")
+        .upsert({
+            visitor_id: visitorId,
+            attempts: attempts,
+            locked_until: lockUntil
+        });
+
+        message.textContent =
+        "3 foutieve pogingen. 12 uur geblokkeerd.";
+
+        return;
+    }
+
+    await supabaseClient
+    .from("password_locks")
+    .upsert({
+        visitor_id: visitorId,
+        attempts: attempts
+    });
+
+    message.textContent =
+    "Onjuist wachtwoord. Nog " +
+    (3 - attempts) +
+    " poging(en) over.";
+
+    document
+    .getElementById("passwordInput")
+    .value = "";
 }
-
-const daysEl =
-    document.getElementById("days");
-
-const hoursEl =
-    document.getElementById("hours");
-
-const minutesEl =
-    document.getElementById("minutes");
-
-const secondsEl =
-    document.getElementById("seconds");
-
-setInterval(updateCountdown,1000);
-updateCountdown();
 
 document
 .getElementById("passwordBtn")
 .addEventListener(
-"click",
-async ()=>{
-
-const entered =
-document
-.getElementById("passwordInput")
-.value;
-
-const message =
-document
-.getElementById("message");
-
-let { data } =
-await supabaseClient
-.from("access_attempts")
-.select("*")
-.eq("visitor_id",visitorId)
-.order("id",{ascending:false})
-.limit(1);
-
-let attempts = 0;
-
-if(data.length){
-    attempts = data[0].attempts || 0;
-
-    if(
-        data[0].locked_until &&
-        new Date(data[0].locked_until) > new Date()
-    ){
-        message.textContent =
-            "Geblokkeerd.";
-        return;
-    }
-}
-
-const success =
-entered === PASSWORD;
-
-attempts++;
-
-let lockUntil = null;
-
-if(!success && attempts >= 3){
-
-    lockUntil =
-        new Date(
-            Date.now() +
-            12*60*60*1000
-        ).toISOString();
-}
-
-await supabaseClient
-.from("access_attempts")
-.insert({
-    visitor_id: visitorId,
-    password_entered: entered,
-    success: success,
-    attempts: success ? 0 : attempts,
-    locked_until: lockUntil
-});
-
-if(success){
-    location.href = NEXT_PAGE;
-    return;
-}
-
-message.textContent =
-    attempts >= 3
-    ? "12 uur geblokkeerd."
-    : "Onjuist wachtwoord.";
-});
+    "click",
+    handlePassword
+);
 </script>
-
-</body>
-</html>
