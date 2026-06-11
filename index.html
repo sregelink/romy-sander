@@ -1,124 +1,91 @@
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <!DOCTYPE html>
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Countdown</title>
 
 <style>
-:root{
-    --bg:#000;
-    --text:#fff;
-}
-
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
-
 body{
-    background:var(--bg);
-    color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:#000;
+    color:#fff;
+    font-family:Arial,sans-serif;
+    min-height:100dvh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    margin:0;
 }
 
 .wrapper{
-    min-height:100dvh;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-    padding:24px;
+    text-align:center;
+    width:100%;
+    max-width:500px;
+    padding:20px;
 }
 
 .countdown{
     display:flex;
-    gap:14px;
-    width:100%;
-    max-width:500px;
     justify-content:center;
+    gap:15px;
 }
 
 .unit{
     flex:1;
-    text-align:center;
 }
 
 .number{
-    font-size:clamp(2.5rem, 11vw, 5rem);
-    font-weight:700;
-    line-height:1;
+    font-size:clamp(2rem,10vw,5rem);
+    font-weight:bold;
 }
 
 .label{
-    margin-top:10px;
-    font-size:.75rem;
-    text-transform:uppercase;
-    letter-spacing:.2em;
     opacity:.7;
-}
-
-.button-container{
-    margin-top:50px;
-    width:100%;
-    max-width:320px;
+    font-size:.8rem;
 }
 
 #continueBtn{
+    margin-top:40px;
     width:100%;
+    padding:15px;
     border:none;
     border-radius:999px;
-    padding:16px 32px;
-    font-size:1rem;
-    font-weight:600;
+    font-size:16px;
+    font-weight:bold;
     cursor:not-allowed;
     opacity:.4;
-    transition:.3s;
-    background:#555;
-    color:#aaa;
 }
 
-#continueBtn.enabled{
-    background:#fff;
-    color:#000;
-    opacity:1;
-    cursor:pointer;
+.enabled{
+    opacity:1 !important;
+    cursor:pointer !important;
 }
 
 .password-section{
     margin-top:20px;
-    width:100%;
-    max-width:320px;
 }
 
-.password-section input{
+input{
     width:100%;
-    padding:14px 16px;
-    border:none;
+    padding:15px;
     border-radius:12px;
-    font-size:16px;
-    outline:none;
+    border:none;
 }
 
 .password-btn{
+    margin-top:10px;
     width:100%;
-    margin-top:12px;
-    padding:14px;
+    padding:15px;
     border:none;
     border-radius:12px;
-    background:#fff;
-    color:#000;
-    font-weight:600;
+    font-weight:bold;
     cursor:pointer;
 }
 
 #message{
-    margin-top:12px;
-    text-align:center;
-    font-size:14px;
-    opacity:.8;
-    min-height:20px;
+    margin-top:10px;
 }
 </style>
 </head>
@@ -126,252 +93,222 @@ body{
 
 <div class="wrapper">
 
-    <div class="countdown">
-        <div class="unit">
-            <div class="number" id="days">0</div>
-            <div class="label">DAGEN</div>
-        </div>
-
-        <div class="unit">
-            <div class="number" id="hours">00</div>
-            <div class="label">UUR</div>
-        </div>
-
-        <div class="unit">
-            <div class="number" id="minutes">00</div>
-            <div class="label">MIN</div>
-        </div>
-
-        <div class="unit">
-            <div class="number" id="seconds">00</div>
-            <div class="label">SEC</div>
-        </div>
+<div class="countdown">
+    <div class="unit">
+        <div class="number" id="days">0</div>
+        <div class="label">DAGEN</div>
     </div>
 
-    <div class="button-container">
-        <button id="continueBtn" disabled>
-            Verder
-        </button>
+    <div class="unit">
+        <div class="number" id="hours">00</div>
+        <div class="label">UUR</div>
     </div>
 
-    <div class="password-section">
-
-        <input
-            type="password"
-            id="passwordInput"
-            placeholder="Wachtwoord">
-
-        <button
-            id="passwordBtn"
-            class="password-btn">
-            Ontgrendel
-        </button>
-
-        <div id="message"></div>
-
+    <div class="unit">
+        <div class="number" id="minutes">00</div>
+        <div class="label">MIN</div>
     </div>
+
+    <div class="unit">
+        <div class="number" id="seconds">00</div>
+        <div class="label">SEC</div>
+    </div>
+</div>
+
+<button id="continueBtn" disabled>
+    Verder
+</button>
+
+<div class="password-section">
+
+<input
+    type="password"
+    id="passwordInput"
+    placeholder="Wachtwoord">
+
+<button
+    class="password-btn"
+    id="passwordBtn">
+    Ontgrendel
+</button>
+
+<div id="message"></div>
 
 </div>
 
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
-/*
-|--------------------------------------------------------------------------
-| INSTELLINGEN
-|--------------------------------------------------------------------------
-*/
-
-const DEADLINE = new Date("2026-06-14T23:59:59").getTime();
-
-// VERVANG DIT WACHTWOORD
-const PASSWORD = "mijngeheimwachtwoord";
-
-// PAGINA WAARNAAR WORDT DOORGESTUURD
+const PASSWORD = "jouw_wachtwoord";
 const NEXT_PAGE = "pagina2.html";
 
-const MAX_ATTEMPTS = 3;
-const LOCK_HOURS = 12;
+const SUPABASE_URL = "https://lyunugxabsahoyywfqhc.supabase.co/rest/v1/";
+const SUPABASE_KEY = "sb_publishable_BSDh9x32ocZYz8tfD87Jfg_-OJnL0X2";
 
-/*
-|--------------------------------------------------------------------------
-| ELEMENTEN
-|--------------------------------------------------------------------------
-*/
+const supabaseClient =
+    supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
 
-const btn = document.getElementById("continueBtn");
+let visitorId =
+    localStorage.getItem("visitorId");
 
-const passwordInput =
-    document.getElementById("passwordInput");
+if(!visitorId){
+    visitorId = crypto.randomUUID();
+    localStorage.setItem(
+        "visitorId",
+        visitorId
+    );
+}
 
-const passwordBtn =
-    document.getElementById("passwordBtn");
+const DEADLINE =
+    new Date("2026-06-14T23:59:59").getTime();
 
-const message =
-    document.getElementById("message");
+const btn =
+    document.getElementById("continueBtn");
 
-/*
-|--------------------------------------------------------------------------
-| COUNTDOWN
-|--------------------------------------------------------------------------
-*/
-
-function unlockContinueButton() {
+function unlockButton(){
 
     btn.disabled = false;
     btn.classList.add("enabled");
 
     btn.onclick = () => {
-        window.location.href = NEXT_PAGE;
+        location.href = NEXT_PAGE;
     };
 }
 
-function updateCountdown() {
+function updateCountdown(){
 
     const now = Date.now();
     const distance = DEADLINE - now;
 
-    if (distance <= 0) {
+    if(distance <= 0){
+
+        unlockButton();
 
         document.getElementById("days").textContent = "0";
         document.getElementById("hours").textContent = "00";
         document.getElementById("minutes").textContent = "00";
         document.getElementById("seconds").textContent = "00";
 
-        clearInterval(timer);
-        unlockContinueButton();
-
         return;
     }
 
     const days =
-        Math.floor(distance / (1000 * 60 * 60 * 24));
+        Math.floor(distance/(1000*60*60*24));
 
     const hours =
-        Math.floor((distance / (1000 * 60 * 60)) % 24);
+        Math.floor((distance/(1000*60*60))%24);
 
     const minutes =
-        Math.floor((distance / (1000 * 60)) % 60);
+        Math.floor((distance/(1000*60))%60);
 
     const seconds =
-        Math.floor((distance / 1000) % 60);
+        Math.floor((distance/1000)%60);
 
-    document.getElementById("days").textContent =
-        days;
+    daysEl.textContent = days;
+    hoursEl.textContent =
+        String(hours).padStart(2,"0");
 
-    document.getElementById("hours").textContent =
-        String(hours).padStart(2, "0");
+    minutesEl.textContent =
+        String(minutes).padStart(2,"0");
 
-    document.getElementById("minutes").textContent =
-        String(minutes).padStart(2, "0");
-
-    document.getElementById("seconds").textContent =
-        String(seconds).padStart(2, "0");
+    secondsEl.textContent =
+        String(seconds).padStart(2,"0");
 }
 
+const daysEl =
+    document.getElementById("days");
+
+const hoursEl =
+    document.getElementById("hours");
+
+const minutesEl =
+    document.getElementById("minutes");
+
+const secondsEl =
+    document.getElementById("seconds");
+
+setInterval(updateCountdown,1000);
 updateCountdown();
-const timer = setInterval(updateCountdown, 1000);
 
-/*
-|--------------------------------------------------------------------------
-| WACHTWOORDBEVEILIGING
-|--------------------------------------------------------------------------
-*/
+document
+.getElementById("passwordBtn")
+.addEventListener(
+"click",
+async ()=>{
 
-function getAttempts() {
-    return parseInt(
-        localStorage.getItem("attempts") || "0"
-    );
-}
+const entered =
+document
+.getElementById("passwordInput")
+.value;
 
-function setAttempts(value) {
-    localStorage.setItem("attempts", value);
-}
+const message =
+document
+.getElementById("message");
 
-function getLockUntil() {
-    return parseInt(
-        localStorage.getItem("lockUntil") || "0"
-    );
-}
+let { data } =
+await supabaseClient
+.from("access_attempts")
+.select("*")
+.eq("visitor_id",visitorId)
+.order("id",{ascending:false})
+.limit(1);
 
-function isLocked() {
-    return Date.now() < getLockUntil();
-}
+let attempts = 0;
 
-function updateLockStatus() {
+if(data.length){
+    attempts = data[0].attempts || 0;
 
-    if (!isLocked()) {
-        passwordInput.disabled = false;
-        passwordBtn.disabled = false;
+    if(
+        data[0].locked_until &&
+        new Date(data[0].locked_until) > new Date()
+    ){
+        message.textContent =
+            "Geblokkeerd.";
         return;
     }
-
-    const minutesLeft = Math.ceil(
-        (getLockUntil() - Date.now()) / 1000 / 60
-    );
-
-    passwordInput.disabled = true;
-    passwordBtn.disabled = true;
-
-    message.textContent =
-        "Geblokkeerd. Opnieuw proberen over " +
-        minutesLeft +
-        " minuten.";
 }
 
-passwordBtn.addEventListener("click", () => {
+const success =
+entered === PASSWORD;
 
-    if (isLocked()) {
-        updateLockStatus();
-        return;
-    }
+attempts++;
 
-    const enteredPassword =
-        passwordInput.value.trim();
+let lockUntil = null;
 
-    if (enteredPassword === PASSWORD) {
+if(!success && attempts >= 3){
 
-        localStorage.removeItem("attempts");
-        localStorage.removeItem("lockUntil");
-
-        window.location.href = NEXT_PAGE;
-        return;
-    }
-
-    let attempts = getAttempts() + 1;
-
-    setAttempts(attempts);
-
-    if (attempts >= MAX_ATTEMPTS) {
-
-        const lockUntil =
+    lockUntil =
+        new Date(
             Date.now() +
-            (LOCK_HOURS * 60 * 60 * 1000);
+            12*60*60*1000
+        ).toISOString();
+}
 
-        localStorage.setItem(
-            "lockUntil",
-            lockUntil
-        );
-
-        message.textContent =
-            "Te veel foutieve pogingen. 12 uur geblokkeerd.";
-
-        updateLockStatus();
-
-    } else {
-
-        const remaining =
-            MAX_ATTEMPTS - attempts;
-
-        message.textContent =
-            "Onjuist wachtwoord. Nog " +
-            remaining +
-            " poging(en) over.";
-    }
-
-    passwordInput.value = "";
+await supabaseClient
+.from("access_attempts")
+.insert({
+    visitor_id: visitorId,
+    password_entered: entered,
+    success: success,
+    attempts: success ? 0 : attempts,
+    locked_until: lockUntil
 });
 
-updateLockStatus();
-setInterval(updateLockStatus, 60000);
+if(success){
+    location.href = NEXT_PAGE;
+    return;
+}
+
+message.textContent =
+    attempts >= 3
+    ? "12 uur geblokkeerd."
+    : "Onjuist wachtwoord.";
+});
 </script>
 
 </body>
