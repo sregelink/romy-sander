@@ -1,162 +1,212 @@
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Countdown</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
-<script>
-const SUPABASE_URL =
-"https://oykyqnbhjjkmbooexkic.supabase.co";
+        body {
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
 
-const SUPABASE_KEY =
-"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95a3lxbmJoamprbWJvb2V4a2ljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzM1NDYsImV4cCI6MjA5Njc0OTU0Nn0.3gbS31mCgbo6bhbf_byOVB4bPS-gw8ZiPcciHL0QA5U";
+        .countdown {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 60px;
+        }
 
-const PASSWORD =
-"mijngeheimecode";
+        .countdown-item {
+            text-align: center;
+        }
 
-const NEXT_PAGE =
-"pagina2.html";
+        .countdown-item span {
+            font-size: 80px;
+            font-weight: bold;
+        }
 
-const supabaseClient =
-supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-);
+        .countdown-item p {
+            font-size: 14px;
+            letter-spacing: 2px;
+            margin-top: 8px;
+        }
 
-let visitorId =
-localStorage.getItem("visitorId");
+        .form-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 320px;
+        }
 
-if (!visitorId) {
-    visitorId = crypto.randomUUID();
-    localStorage.setItem(
-        "visitorId",
-        visitorId
-    );
-}
+        input[type="password"] {
+            padding: 14px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+            background: #1a1a1a;
+            color: #fff;
+            outline: none;
+        }
 
-async function logAttempt(password, success){
+        button {
+            padding: 14px;
+            border-radius: 8px;
+            border: none;
+            background: #fff;
+            color: #000;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
 
-    await supabaseClient
-    .from("password_logs")
-    .insert({
-        visitor_id: visitorId,
-        password_entered: password,
-        success: success
-    });
-}
+        button:hover { background: #ddd; }
 
-async function getLockData(){
+        #message {
+            text-align: center;
+            font-size: 14px;
+            min-height: 20px;
+            color: #ff4444;
+        }
+    </style>
+</head>
+<body>
 
-    const { data } =
-    await supabaseClient
-    .from("password_locks")
-    .select("*")
-    .eq("visitor_id", visitorId)
-    .maybeSingle();
+    <div class="countdown">
+        <div class="countdown-item"><span id="dagen">0</span><p>DAGEN</p></div>
+        <div class="countdown-item"><span id="uren">0</span><p>UUR</p></div>
+        <div class="countdown-item"><span id="minuten">0</span><p>MIN</p></div>
+        <div class="countdown-item"><span id="seconden">0</span><p>SEC</p></div>
+    </div>
 
-    return data;
-}
+    <div class="form-wrapper">
+        <p id="message"></p>
+        <input type="password" id="passwordInput" placeholder="Wachtwoord" />
+        <button id="passwordBtn">Ontgrendel</button>
+    </div>
 
-async function handlePassword(){
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // ── Countdown ──────────────────────────────────────────────
+        const DOEL_DATUM = new Date("2025-06-14T23:59:59"); // ← pas dit aan
 
-    const message =
-    document.getElementById("message");
+        function updateCountdown() {
+            const nu = new Date();
+            const verschil = DOEL_DATUM - nu;
 
-    const entered =
-    document
-    .getElementById("passwordInput")
-    .value
-    .trim();
+            if (verschil <= 0) {
+                document.getElementById("dagen").textContent = "0";
+                document.getElementById("uren").textContent = "0";
+                document.getElementById("minuten").textContent = "0";
+                document.getElementById("seconden").textContent = "0";
+                return;
+            }
 
-    const lockData =
-    await getLockData();
+            const dagen = Math.floor(verschil / (1000 * 60 * 60 * 24));
+            const uren = Math.floor((verschil % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minuten = Math.floor((verschil % (1000 * 60 * 60)) / (1000 * 60));
+            const seconden = Math.floor((verschil % (1000 * 60)) / 1000);
 
-    if(
-        lockData &&
-        lockData.locked_until &&
-        new Date(lockData.locked_until) > new Date()
-    ){
+            document.getElementById("dagen").textContent = dagen;
+            document.getElementById("uren").textContent = uren;
+            document.getElementById("minuten").textContent = minuten;
+            document.getElementById("seconden").textContent = seconden;
+        }
 
-        const mins =
-        Math.ceil(
-            (
-                new Date(lockData.locked_until)
-                - new Date()
-            ) / 60000
-        );
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
 
-        message.textContent =
-        "Geblokkeerd. Nog " +
-        mins +
-        " minuten.";
+        // ── Supabase & wachtwoord ──────────────────────────────────
+        const SUPABASE_URL = "https://oykyqnbhjjkmbooexkic.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95a3lxbmJoamprbWJvb2V4a2ljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzM1NDYsImV4cCI6MjA5Njc0OTU0Nn0.3gbS31mCgbo6bhbf_byOVB4bPS-gw8ZiPcciHL0QA5U";
+        const PASSWORD  = "mijngeheimecode";
+        const NEXT_PAGE = "pagina2.html";
 
-        return;
-    }
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    if(entered === PASSWORD){
+        let visitorId = localStorage.getItem("visitorId");
+        if (!visitorId) {
+            visitorId = crypto.randomUUID();
+            localStorage.setItem("visitorId", visitorId);
+        }
 
-        await logAttempt(
-            entered,
-            true
-        );
+        async function logAttempt(password, success) {
+            await supabaseClient.from("password_logs").insert({
+                visitor_id: visitorId,
+                password_entered: password,
+                success: success
+            });
+        }
 
-        window.location.href =
-        NEXT_PAGE;
+        async function getLockData() {
+            const { data } = await supabaseClient
+                .from("password_locks")
+                .select("*")
+                .eq("visitor_id", visitorId)
+                .maybeSingle();
+            return data;
+        }
 
-        return;
-    }
+        async function handlePassword() {
+            const message = document.getElementById("message");
+            const entered = document.getElementById("passwordInput").value.trim();
 
-    await logAttempt(
-        entered,
-        false
-    );
+            if (!entered) {
+                message.textContent = "Vul een wachtwoord in.";
+                return;
+            }
 
-    let attempts = 1;
+            const lockData = await getLockData();
 
-    if(lockData){
-        attempts =
-        lockData.attempts + 1;
-    }
+            if (lockData?.locked_until && new Date(lockData.locked_until) > new Date()) {
+                const mins = Math.ceil((new Date(lockData.locked_until) - new Date()) / 60000);
+                message.textContent = "Geblokkeerd. Nog " + mins + " minuten.";
+                return;
+            }
 
-    if(attempts >= 3){
+            if (entered === PASSWORD) {
+                await logAttempt(entered, true);
+                window.location.href = NEXT_PAGE;
+                return;
+            }
 
-        const lockUntil =
-        new Date(
-            Date.now() +
-            12 * 60 * 60 * 1000
-        ).toISOString();
+            await logAttempt(entered, false);
 
-        await supabaseClient
-        .from("password_locks")
-        .upsert({
-            visitor_id: visitorId,
-            attempts: attempts,
-            locked_until: lockUntil
+            const attempts = lockData ? lockData.attempts + 1 : 1;
+
+            if (attempts >= 3) {
+                const lockUntil = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString();
+                await supabaseClient.from("password_locks").upsert({
+                    visitor_id: visitorId,
+                    attempts: attempts,
+                    locked_until: lockUntil
+                });
+                message.textContent = "3 foutieve pogingen. 12 uur geblokkeerd.";
+                return;
+            }
+
+            await supabaseClient.from("password_locks").upsert({
+                visitor_id: visitorId,
+                attempts: attempts
+            });
+
+            message.style.color = "#ff4444";
+            message.textContent = "Onjuist wachtwoord. Nog " + (3 - attempts) + " poging(en) over.";
+            document.getElementById("passwordInput").value = "";
+        }
+
+        document.getElementById("passwordBtn").addEventListener("click", handlePassword);
+
+        document.getElementById("passwordInput").addEventListener("keydown", function(e) {
+            if (e.key === "Enter") handlePassword();
         });
-
-        message.textContent =
-        "3 foutieve pogingen. 12 uur geblokkeerd.";
-
-        return;
-    }
-
-    await supabaseClient
-    .from("password_locks")
-    .upsert({
-        visitor_id: visitorId,
-        attempts: attempts
-    });
-
-    message.textContent =
-    "Onjuist wachtwoord. Nog " +
-    (3 - attempts) +
-    " poging(en) over.";
-
-    document
-    .getElementById("passwordInput")
-    .value = "";
-}
-
-document
-.getElementById("passwordBtn")
-.addEventListener(
-    "click",
-    handlePassword
-);
-</script>
+    </script>
+</body>
+</html>
